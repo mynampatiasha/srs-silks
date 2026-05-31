@@ -111,7 +111,13 @@
       <a href="index.html#contact" class="nav-contact-link">Contact Us</a>
     </div>
     <div class="nav-actions">
-      <button class="nav-btn" onclick="window.location.href='index.html#collection'"><i class="fa-solid fa-arrow-left"></i> Back to Store</button>
+      <button class="nav-btn" id="nav-cart-btn" aria-label="View Cart" title="View Cart">
+        <i class="fa-solid fa-cart-shopping"></i>
+        <span class="cart-count" id="cart-count" style="display:none;">0</span>
+      </button>
+      <button class="nav-btn" onclick="window.location.href='index.html#collection'" aria-label="Back to Store" title="Back to Store">
+        <i class="fa-solid fa-store"></i>
+      </button>
     </div>
   </nav>
 
@@ -148,6 +154,19 @@
     <h2>You May Also Like</h2>
     <div class="related-grid" id="related-grid"></div>
   </div>
+
+  <div class="cart-overlay" id="cart-overlay"></div>
+  <aside class="cart-panel" id="cart-panel" aria-label="Shopping cart">
+    <div class="cart-head">
+      <h3>Your Cart</h3>
+      <button class="close-btn" id="cart-close-btn" aria-label="Close cart">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+    </div>
+    <div id="cart-items"></div>
+  </aside>
+  
+  <div id="toast" role="status" aria-live="polite"></div>
 
   <footer class="footer">
     <div class="footer-inner">

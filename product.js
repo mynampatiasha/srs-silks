@@ -7,6 +7,125 @@ const firebaseConfig = {
   appId: "1:256324869428:web:02a6392b90e77b2f805961"
 };
 
+// ========================
+// CART & TOAST FUNCTIONALITY
+// ========================
+function updateCartCount() {
+  const cart = JSON.parse(localStorage.getItem('srs_cart') || '[]');
+  const count = cart.reduce((sum, item) => sum + item.qty, 0);
+  const countSpan = document.getElementById('cart-count');
+  if (countSpan) {
+    countSpan.textContent = count;
+    countSpan.style.display = count > 0 ? 'flex' : 'none';
+  }
+}
+
+function showToast(message) {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+function renderCart() {
+  const cart = JSON.parse(localStorage.getItem('srs_cart') || '[]');
+  const cartItems = document.getElementById('cart-items');
+  if (!cartItems) return;
+  
+  if (cart.length === 0) {
+    cartItems.innerHTML = `
+      <div class="cart-empty" style="padding: 40px 20px; text-align: center; color: #666;">
+        Your cart is empty.<br>
+        <button onclick="window.location.href='index.html#collection'" style="margin-top:20px; padding:10px 20px; background:#d4b896; border:none; color:#fff; border-radius:6px; cursor:pointer;">Continue Shopping</button>
+      </div>`;
+    return;
+  }
+
+  let subtotal = 0;
+  cartItems.innerHTML = cart.map((item, index) => {
+    subtotal += item.price * (item.qty || 1);
+    return `
+      <div class="cart-item">
+        <div class="cart-item-img">
+          <img src="${item.img}" alt="${item.name}" onerror="this.style.background='#d4b896';this.removeAttribute('src')" />
+        </div>
+        <div class="cart-item-info">
+          <div class="cart-item-name">${item.name} ${item.qty > 1 ? `(x${item.qty})` : ''}</div>
+          <div class="cart-item-price">₹${item.price.toLocaleString('en-IN')}</div>
+        </div>
+        <button class="cart-rm" onclick="removeFromCart(${index})" aria-label="Remove item">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+    `;
+  }).join('');
+
+  const shipping = subtotal >= 5000 ? 0 : 150; // Example flat shipping rate
+  const total = subtotal + shipping;
+  
+  cartItems.innerHTML += `
+    <div class="cart-total-box">
+      <div class="cart-total-row" style="display:flex; justify-content:space-between; margin-bottom:8px;">
+        <span>Subtotal</span>
+        <span>₹${subtotal.toLocaleString('en-IN')}</span>
+      </div>
+      <div class="cart-total-row" style="display:flex; justify-content:space-between; margin-bottom:8px;">
+        <span>Shipping</span>
+        <span>${shipping === 0 ? 'Free' : '₹' + shipping}</span>
+      </div>
+      ${shipping === 0 ? '<div style="color:#2ecc71; font-size:12px; margin-bottom:10px; text-align:right;">✓ Free shipping applied on orders above ₹5,000</div>' : ''}
+      <div class="cart-total-row total-row" style="display:flex; justify-content:space-between; font-weight:bold; font-size:18px; margin-top:10px; padding-top:10px; border-top:1px solid #ccc;">
+        <span>Total</span>
+        <span>₹${total.toLocaleString('en-IN')}</span>
+      </div>
+    </div>
+    <button class="btn-primary" style="width:100%; margin-top:15px; padding: 14px; background: #8b4513; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer;" onclick="window.location.href='index.html#checkout'">Proceed to Checkout →</button>
+  `;
+}
+
+window.updateQty = (index, change) => {
+  let cart = JSON.parse(localStorage.getItem('srs_cart') || '[]');
+  if (cart[index].qty + change > 0) {
+    cart[index].qty += change;
+    localStorage.setItem('srs_cart', JSON.stringify(cart));
+    updateCartCount();
+    renderCart();
+  }
+};
+
+window.removeFromCart = (index) => {
+  let cart = JSON.parse(localStorage.getItem('srs_cart') || '[]');
+  const itemName = cart[index].name;
+  cart.splice(index, 1);
+  localStorage.setItem('srs_cart', JSON.stringify(cart));
+  updateCartCount();
+  renderCart();
+  showToast(itemName + " removed");
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+  updateCartCount();
+  renderCart();
+
+  const cartPanel = document.getElementById('cart-panel');
+  const cartOverlay = document.getElementById('cart-overlay');
+  
+  document.getElementById('nav-cart-btn')?.addEventListener('click', () => {
+    cartPanel.classList.add('open');
+    cartOverlay.classList.add('open');
+  });
+  
+  document.getElementById('cart-close-btn')?.addEventListener('click', () => {
+    cartPanel.classList.remove('open');
+    cartOverlay.classList.remove('open');
+  });
+  
+  cartOverlay?.addEventListener('click', () => {
+    cartPanel.classList.remove('open');
+    cartOverlay.classList.remove('open');
+  });
+});
+
 if (!firebase.apps.length) {
   firebase.initializeApp(firebaseConfig);
 }
@@ -78,8 +197,11 @@ document.addEventListener('DOMContentLoaded', async () => {
           cart.push({ id: p.id, name: p.name, price: p.price, img: p.img, qty: 1 });
         }
         localStorage.setItem('srs_cart', JSON.stringify(cart));
-        alert('Added to cart!');
-        window.location.href = 'index.html#cart'; // Redirect to cart
+        updateCartCount();
+        renderCart();
+        showToast(p.name + " added to cart 🛍️");
+        document.getElementById('cart-panel').classList.add('open');
+        document.getElementById('cart-overlay').classList.add('open');
       };
       
       btnWa.onclick = () => {

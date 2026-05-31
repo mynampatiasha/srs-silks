@@ -52,7 +52,10 @@ function loadCategories() {
           <img src="${cat.img}" alt="${cat.name}" style="border-radius:50%; width:60px; height:60px; object-fit:cover; margin:0 auto 10px auto;">
           <strong>${cat.name}</strong>
           <span>ID: ${cat.id}</span>
-          <button onclick="deleteCat('${doc.id}')">Delete</button>
+          <div style="margin-top: 10px; display: flex; gap: 5px; flex-wrap: wrap;">
+            <button onclick="editCat('${doc.id}')" style="background: #2196F3;">Edit</button>
+            <button onclick="deleteCat('${doc.id}')">Delete</button>
+          </div>
         </div>
       `;
       pCatSelect.innerHTML += `<option value="${cat.id}">${cat.name}</option>`;
@@ -92,27 +95,66 @@ const btnAddCat = document.getElementById('btn-add-cat');
 
 catForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  btnAddCat.disabled = true;
-  btnAddCat.textContent = "Uploading...";
-
-  const id = document.getElementById('c-id').value.toLowerCase().replace(/\s+/g, '_');
-  const name = document.getElementById('c-name').value;
-  const file = document.getElementById('c-img').files[0];
   
+  const idInput = document.getElementById('c-id');
+  const id = idInput.value.toLowerCase().replace(/\s+/g, '_');
+  const name = document.getElementById('c-name').value;
+  const fileInput = document.getElementById('c-img');
+  const file = fileInput.files[0];
+  
+  if (!window.editingCatId && !file) {
+    alert("Please select an image.");
+    return;
+  }
+
+  btnAddCat.disabled = true;
+  btnAddCat.textContent = window.editingCatId ? "Updating..." : "Uploading...";
+
   try {
-    const base64Img = await compressImage(file, 400); // Small size for category circles
-    await db.collection('categories').doc(id).set({ id, name, img: base64Img });
+    let updateData = { id, name };
+    
+    if (file) {
+      const base64Img = await compressImage(file, 400); // Small size for category circles
+      updateData.img = base64Img;
+    }
+    
+    // Always use the ID field value as the document ID for categories to keep it clean
+    await db.collection('categories').doc(id).set(updateData, { merge: true });
+    
+    // If the ID changed during edit, delete the old document
+    if (window.editingCatId && window.editingCatId !== id) {
+      await db.collection('categories').doc(window.editingCatId).delete();
+    }
     
     catForm.reset();
-    showStatus('Category Added!');
+    idInput.readOnly = false;
+    window.editingCatId = null;
+    btnAddCat.textContent = "Add Category";
+    showStatus('Category Saved!');
   } catch (error) {
     console.error(error);
-    alert('Error uploading category!');
+    alert('Error saving category!');
+    btnAddCat.textContent = window.editingCatId ? "Update Category" : "Add Category";
   }
 
   btnAddCat.disabled = false;
-  btnAddCat.textContent = "Add Category";
 });
+
+window.editCat = async (id) => {
+  const doc = await db.collection('categories').doc(id).get();
+  if(!doc.exists) return;
+  const cat = doc.data();
+  
+  document.getElementById('c-id').value = cat.id;
+  document.getElementById('c-name').value = cat.name;
+  document.getElementById('c-img').value = '';
+  // Removing required attribute temporarily for editing since image is optional on edit
+  document.getElementById('c-img').removeAttribute('required'); 
+  
+  window.editingCatId = id;
+  document.getElementById('btn-add-cat').textContent = "Update Category";
+  window.scrollTo(0,0);
+};
 
 window.deleteCat = async (id) => {
   if(confirm('Are you sure you want to delete this category?')) {
@@ -286,7 +328,10 @@ function loadBanners() {
         <div class="item-card">
           <img src="${b.url}" alt="${b.alt}">
           <strong>${b.label}</strong>
-          <button onclick="deleteBanner('${doc.id}')">Delete</button>
+          <div style="margin-top: 10px; display: flex; gap: 5px; flex-wrap: wrap;">
+            <button onclick="editBanner('${doc.id}')" style="background: #2196F3;">Edit</button>
+            <button onclick="deleteBanner('${doc.id}')">Delete</button>
+          </div>
         </div>
       `;
     });
@@ -295,30 +340,65 @@ function loadBanners() {
 
 bannerForm.addEventListener('submit', async (e) => {
   e.preventDefault();
-  btnAddBanner.disabled = true;
-  btnAddBanner.textContent = "Uploading...";
+  
+  const fileInput = document.getElementById('b-img');
+  const file = fileInput.files[0];
+  
+  if (!window.editingBannerId && !file) {
+    alert("Please select an image.");
+    return;
+  }
 
-  const file = document.getElementById('b-img').files[0];
+  btnAddBanner.disabled = true;
+  btnAddBanner.textContent = window.editingBannerId ? "Updating..." : "Uploading...";
+
   const label = document.getElementById('b-label').value;
   const alt = document.getElementById('b-alt').value;
 
   try {
-    const base64Img = await compressImage(file, 1200);
+    let updateData = { label, alt };
+    
+    if (file) {
+      const base64Img = await compressImage(file, 1200);
+      updateData.url = base64Img;
+    }
 
-    await db.collection('banners').add({
-      label, alt, url: base64Img, createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
+    if (window.editingBannerId) {
+      await db.collection('banners').doc(window.editingBannerId).update(updateData);
+      window.editingBannerId = null;
+      showStatus('Banner Updated!');
+    } else {
+      updateData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      await db.collection('banners').add(updateData);
+      showStatus('Banner Added!');
+    }
 
     bannerForm.reset();
-    showStatus('Banner Added!');
+    document.getElementById('b-img').setAttribute('required', 'required');
   } catch (error) {
     console.error(error);
-    alert('Error uploading banner!');
+    alert('Error saving banner!');
   }
 
   btnAddBanner.disabled = false;
   btnAddBanner.textContent = "Add Banner";
 });
+
+window.editBanner = async (id) => {
+  const doc = await db.collection('banners').doc(id).get();
+  if(!doc.exists) return;
+  const b = doc.data();
+  
+  document.getElementById('b-label').value = b.label;
+  document.getElementById('b-alt').value = b.alt;
+  document.getElementById('b-img').value = '';
+  // Image is optional when editing
+  document.getElementById('b-img').removeAttribute('required');
+  
+  window.editingBannerId = id;
+  document.getElementById('btn-add-banner').textContent = "Update Banner";
+  window.scrollTo(0,0);
+};
 
 window.deleteBanner = async (id) => {
   if(confirm('Are you sure you want to delete this banner?')) {
