@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
 import ProductGrid from '../components/ProductGrid';
 import CustomerAuthModal from '../components/CustomerAuthModal';
+import Footer from '../components/Footer';
 import confetti from 'canvas-confetti';
 
 const Home = () => {
@@ -15,6 +16,7 @@ const Home = () => {
   const [savingsBlast, setSavingsBlast] = useState(null);
   const [cartOpen, setCartOpen] = useState(false);
   const [categories, setCategories] = useState([]);
+  const [banners, setBanners] = useState([]);
   const navigate = useNavigate();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [customer, setCustomer] = useState(null);
@@ -31,6 +33,10 @@ const Home = () => {
       .then(res => setCategories(res.data))
       .catch(err => console.error(err));
 
+    axios.get(`http://${window.location.hostname}:5000/api/banners`)
+      .then(res => setBanners(res.data))
+      .catch(err => console.error(err));
+
     if (saved) {
       const token = localStorage.getItem('srs_customer_token');
       axios.get(`http://${window.location.hostname}:5000/api/customer/wishlist`, {
@@ -41,6 +47,15 @@ const Home = () => {
   }, []);
 
   const featuredCats = categories.filter(c => c.showInHeader && !c.parentId);
+
+  // Duplicate the list so the CSS scroll animation can loop seamlessly
+  const scrollingBanners = banners.length > 0 ? [...banners, ...banners] : [];
+
+  const handleBannerClick = (banner) => {
+    if (banner.linkCategoryIds && banner.linkCategoryIds.length > 0) {
+      navigate(`/category?ids=${banner.linkCategoryIds.join(',')}`);
+    }
+  };
 
   const handleAddToCart = (product) => {
     if (!customer) {
@@ -87,16 +102,34 @@ const Home = () => {
       <Navbar cartCount={cart.length} onCartClick={() => setCartOpen(!cartOpen)} />
       
       {featuredCats.length > 0 && (
-        <div className="featured-categories-bar">
+        <div className="featured-categories-bar featured-categories-bar-compact">
           <div className="featured-categories-container">
             {featuredCats.map(cat => (
               <div
                 key={cat._id}
-                className="featured-category-item"
+                className="featured-category-item featured-category-item-small"
                 onClick={() => navigate(`/category/${cat.id}`)}
               >
                 <img src={cat.img} alt={cat.name} />
                 <span>{cat.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {banners.length > 0 && (
+        <div className="banner-carousel">
+          <div className={`banner-carousel-track ${banners.length > 2 ? 'auto-scroll' : ''}`}>
+            {scrollingBanners.map((b, idx) => (
+              <div
+                key={`${b._id}-${idx}`}
+                className="banner-carousel-item"
+                onClick={() => handleBannerClick(b)}
+                style={{ cursor: b.linkCategoryIds && b.linkCategoryIds.length > 0 ? 'pointer' : 'default' }}
+              >
+                <img className="banner-bg-blur" src={b.url} alt="" aria-hidden="true" />
+                <img className="banner-fg" src={b.url} alt={b.alt || b.label} />
               </div>
             ))}
           </div>
@@ -113,12 +146,7 @@ const Home = () => {
         onToggleWishlist={handleToggleWishlist} 
       />
       
-      {/* Footer and other sections can go here */}
-      <footer className="footer">
-        <div className="footer-bottom">
-          <p>© 2026 SRS Silk Traders. All rights reserved.</p>
-        </div>
-      </footer>
+      <Footer />
 
       {showAuthModal && (
         <CustomerAuthModal 

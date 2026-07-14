@@ -1,13 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import CustomerAuthModal from '../components/CustomerAuthModal';
 import confetti from 'canvas-confetti';
 
 const CategoryPage = () => {
   const { categoryId } = useParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+
+  // Support two modes: single category (/category/:categoryId) or combined (/category?ids=a,b,c)
+  const idsParam = searchParams.get('ids');
+  const multiCatIds = idsParam ? idsParam.split(',').filter(Boolean) : [];
+  const isMultiMode = multiCatIds.length > 0;
   const [allCategories, setAllCategories] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
   const [cart, setCart] = useState(() => {
@@ -49,7 +55,7 @@ const CategoryPage = () => {
 
   useEffect(() => {
     setActiveSubCat('all'); // reset sub-filter when category changes
-  }, [categoryId]);
+  }, [categoryId, idsParam]);
 
   const handleToggleWishlist = async (product) => {
     if (!customer) {
@@ -71,30 +77,51 @@ const CategoryPage = () => {
   // All parent cats for the sticky bar
   const featuredParents = allCategories.filter(c => c.showInHeader && !c.parentId);
 
-  // Current category (could be parent or child)
+  // Current category (single mode only)
   const currentCat = allCategories.find(c => c.id === categoryId);
 
-  // Determine if current is a parent → get its children
+  // Determine if current is a parent → get its children (single mode only)
   const isParent = currentCat && !currentCat.parentId;
   const childCats = isParent ? allCategories.filter(c => c.parentId === categoryId) : [];
 
   // Collect all category IDs to filter products by
-  const relevantCatIds = isParent
-    ? [categoryId, ...allCategories.filter(c => c.parentId === categoryId).map(c => c.id)]
-    : [categoryId];
+  let relevantCatIds = [];
+  if (isMultiMode) {
+    // Combined mode: expand each selected ID — if it's a parent, include its children too
+    relevantCatIds = multiCatIds.reduce((acc, id) => {
+      const cat = allCategories.find(c => c.id === id);
+      const isP = cat && !cat.parentId;
+      const expanded = isP
+        ? [id, ...allCategories.filter(c => c.parentId === id).map(c => c.id)]
+        : [id];
+      return [...acc, ...expanded];
+    }, []);
+  } else {
+    relevantCatIds = isParent
+      ? [categoryId, ...allCategories.filter(c => c.parentId === categoryId).map(c => c.id)]
+      : [categoryId];
+  }
 
   // Filter products: match cat or any entry in categories[]
   let filteredProducts = allProducts.filter(p => {
-    const inCat = p.cat === categoryId || (p.categories || []).some(c => relevantCatIds.includes(c));
+    const inCat = relevantCatIds.includes(p.cat) || (p.categories || []).some(c => relevantCatIds.includes(c));
     return inCat;
   });
 
-  // Further filter by selected sub-category
-  if (activeSubCat !== 'all') {
+  // Further filter by selected sub-category (single mode only — combined mode has no sub-chips)
+  if (!isMultiMode && activeSubCat !== 'all') {
     filteredProducts = filteredProducts.filter(p =>
       p.cat === activeSubCat || (p.categories || []).includes(activeSubCat)
     );
   }
+
+  // Page title / breadcrumb label for combined mode
+  const multiCatNames = isMultiMode
+    ? multiCatIds.map(id => allCategories.find(c => c.id === id)?.name).filter(Boolean)
+    : [];
+  const pageTitle = isMultiMode
+    ? (multiCatNames.length > 0 ? multiCatNames.join(' + ') : 'Selected Collection')
+    : (currentCat?.name || categoryId);
 
   const formatPrice = (price) => '₹' + Number(price).toLocaleString('en-IN');
   const getSavings = (price, orig) => orig ? Math.round(((orig - price) / orig) * 100) + '% off' : '';
@@ -130,7 +157,7 @@ const CategoryPage = () => {
             {featuredParents.map(cat => (
               <div
                 key={cat._id}
-                className={`featured-category-item ${cat.id === categoryId ? 'active-cat' : ''}`}
+                className={`featured-category-item ${!isMultiMode && cat.id === categoryId ? 'active-cat' : ''}`}
                 onClick={() => navigate(`/category/${cat.id}`)}
               >
                 <img src={cat.img} alt={cat.name} />
@@ -146,17 +173,17 @@ const CategoryPage = () => {
         <div className="cat-breadcrumb">
           <span onClick={() => navigate('/')} style={{ cursor: 'pointer', color: 'var(--rust)' }}>Home</span>
           <span> / </span>
-          <span style={{ color: 'var(--muted)' }}>{currentCat?.name || categoryId}</span>
+          <span style={{ color: 'var(--muted)' }}>{pageTitle}</span>
         </div>
 
         {/* Page title */}
         <div className="cat-page-header">
-          <h1>{currentCat?.name || categoryId}</h1>
+          <h1>{pageTitle}</h1>
           <p>{filteredProducts.length} product{filteredProducts.length !== 1 ? 's' : ''} found</p>
         </div>
 
-        {/* Sub-category filter chips (only shown if parent has children) */}
-        {childCats.length > 0 && (
+        {/* Sub-category filter chips (only shown in single-category mode, if parent has children) */}
+        {!isMultiMode && childCats.length > 0 && (
           <div className="sub-cat-chips">
             <button
               className={`sub-cat-chip ${activeSubCat === 'all' ? 'active' : ''}`}

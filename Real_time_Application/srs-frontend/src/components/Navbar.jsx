@@ -22,8 +22,8 @@ const Navbar = ({ cartCount, onCartClick }) => {
         <a href="/#collection" onClick={() => setMenuOpen(false)}>Collection</a>
         <a href="/#gallery" onClick={() => setMenuOpen(false)}>Gallery</a>
         <a href="/#reviews" onClick={() => setMenuOpen(false)}>Reviews</a>
-        <a href="/#about" onClick={() => setMenuOpen(false)}>About</a>
-        <a href="/#contact" className="nav-contact-link" onClick={() => setMenuOpen(false)}>Contact Us</a>
+        <Link to="/about" onClick={() => setMenuOpen(false)}>About</Link>
+        <Link to="/contact" className="nav-contact-link" onClick={() => setMenuOpen(false)}>Contact Us</Link>
       </div>
       <div className="nav-actions">
         <Link to="/wishlist" className="nav-btn" title="Wishlist" aria-label="Open wishlist" style={{ color: 'var(--ink)' }}>

@@ -8,12 +8,25 @@ import Customer_Admin from '../components/admin/Customer_Admin';
 import Order_Admin from '../components/admin/Order_Admin';
 import Return_Admin from '../components/admin/Return_Admin';
 import Review_Admin from '../components/admin/Review_Admin';
+import DashboardAttentionSection from '../components/admin/DashboardAttentionSection';
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [lowStockProducts, setLowStockProducts] = useState([]);
+  const [summary, setSummary] = useState(null);
+  const [summaryLoading, setSummaryLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`http://${window.location.hostname}:5000/api/admin/dashboard-summary`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` }
+    })
+      .then(res => res.json())
+      .then(data => setSummary(data))
+      .catch(err => console.error('Failed to load dashboard summary:', err))
+      .finally(() => setSummaryLoading(false));
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
@@ -52,11 +65,9 @@ const AdminDashboard = () => {
         return (
           <div className="tab-content active" id="tab-dashboard">
             <div className="tab-header" style={{ display: 'flex', alignItems: 'center', gap: '15px', marginBottom: '20px' }}>
-              <button className="hamburger-menu" onClick={() => setIsSidebarOpen(true)} style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}>
-                <i className="fa-solid fa-bars" style={{ color: '#333' }}></i>
-              </button>
               <h3 style={{ margin: 0 }}>Admin Dashboard</h3>
             </div>
+            <DashboardAttentionSection summary={summary} loading={summaryLoading} />
             <div style={{ background: 'white', padding: '30px', borderRadius: '12px', boxShadow: '0 2px 10px rgba(0,0,0,0.03)', marginBottom: '20px' }}>
               <h2>Welcome back, Admin!</h2>
               <p style={{ color: '#666', marginTop: '10px' }}>Select an option from the sidebar to manage your store content.</p>
@@ -145,6 +156,9 @@ const AdminDashboard = () => {
 
       {/* Main Content Area */}
       <main className="admin-content" style={{ flex: 1, padding: '30px', overflowY: 'auto' }}>
+        <button className="hamburger-menu" onClick={() => setIsSidebarOpen(true)} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', marginBottom: '20px' }}>
+          <i className="fa-solid fa-bars" style={{ color: '#333' }}></i>
+        </button>
         {renderContent()}
       </main>
     </div>

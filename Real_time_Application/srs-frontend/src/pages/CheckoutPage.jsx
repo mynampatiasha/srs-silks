@@ -18,20 +18,28 @@ let DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
+// Detects raw highway codes like "NH44", "SH5", or "NH44;NH65;NH163"
+// which OpenStreetMap sometimes returns instead of a real street name
+const isHighwayCode = (value) => {
+  if (!value) return false;
+  return value.split(';').every(part => /^(NH|SH|MDR)\s?-?\d+$/i.test(part.trim()));
+};
+
 // Helper to fetch address from coordinates
 const fetchAddress = async (lat, lon, setNewAddress) => {
   try {
     const res = await axios.get(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`);
     if (res.data && res.data.address) {
       const addr = res.data.address;
+      const cleanRoad = isHighwayCode(addr.road) ? null : addr.road;
       const streetParts = [
         addr.amenity, addr.building, addr.house_number, 
-        addr.road, addr.neighbourhood, addr.suburb
+        cleanRoad, addr.neighbourhood, addr.suburb
       ].filter(Boolean);
       
       setNewAddress(prev => ({
         ...prev,
-        street: streetParts.join(', ') || addr.city_district || '',
+        street: streetParts.join(', ') || addr.city_district || addr.suburb || '',
         city: addr.city || addr.town || addr.village || '',
         state: addr.state || '',
         pincode: addr.postcode || ''
@@ -191,7 +199,7 @@ const CheckoutPage = () => {
     }, () => {
       toast.error("Unable to retrieve your location. Please check browser permissions.");
       setLocationLoading(false);
-    });
+    }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
   };
 
   const handleMapSearch = async () => {

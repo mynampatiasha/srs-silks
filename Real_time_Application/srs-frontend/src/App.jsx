@@ -12,6 +12,8 @@ import AddressesPage from './pages/AddressesPage'
 import OrdersPage from './pages/OrdersPage'
 import CartPage from './pages/CartPage'
 import CheckoutPage from './pages/CheckoutPage'
+import AboutPage from './pages/AboutPage'
+import ContactPage from './pages/ContactPage'
 
 function App() {
   return (
@@ -37,6 +39,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/category/:categoryId" element={<CategoryPage />} />
+        <Route path="/category" element={<CategoryPage />} />
         <Route path="/product/:id" element={<ProductPage />} />
         <Route path="/wishlist" element={<WishlistPage />} />
         <Route path="/profile" element={<ProfilePage />} />
@@ -44,6 +47,8 @@ function App() {
         <Route path="/orders" element={<OrdersPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/about" element={<AboutPage />} />
+        <Route path="/contact" element={<ContactPage />} />
         <Route path="/admin" element={<AdminLogin />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
       </Routes>

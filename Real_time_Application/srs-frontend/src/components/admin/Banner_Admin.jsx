@@ -6,7 +6,7 @@ import ConfirmModal from '../ConfirmModal';
 const Banner_Admin = () => {
   const [banners, setBanners] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [formData, setFormData] = useState({ _id: '', label: '', alt: '', url: '', linkCategoryId: '' });
+  const [formData, setFormData] = useState({ _id: '', label: '', alt: '', url: '', linkCategoryIds: [] });
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -23,7 +23,9 @@ const Banner_Admin = () => {
 
   const fetchBanners = async () => {
     try {
-      const res = await axios.get(`http://${window.location.hostname}:5000/api/banners`);
+      const res = await axios.get(`http://${window.location.hostname}:5000/api/banners/admin/all`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       setBanners(res.data);
     } catch (err) {
       console.error(err);
@@ -47,13 +49,23 @@ const Banner_Admin = () => {
         label: banner.label,
         alt: banner.alt || '',
         url: banner.url,
-        linkCategoryId: banner.linkCategoryId || ''
+        linkCategoryIds: banner.linkCategoryIds || []
       });
     } else {
       setIsEditing(false);
-      setFormData({ _id: '', label: '', alt: '', url: '', linkCategoryId: '' });
+      setFormData({ _id: '', label: '', alt: '', url: '', linkCategoryIds: [] });
     }
     setIsDrawerOpen(true);
+  };
+
+  const toggleCategorySelection = (id) => {
+    setFormData(prev => {
+      const exists = prev.linkCategoryIds.includes(id);
+      const updated = exists
+        ? prev.linkCategoryIds.filter(cid => cid !== id)
+        : [...prev.linkCategoryIds, id];
+      return { ...prev, linkCategoryIds: updated };
+    });
   };
 
   const handleSave = async (e) => {
@@ -75,6 +87,19 @@ const Banner_Admin = () => {
     } catch (err) {
       console.error(err);
       toast.error("Failed to save banner");
+    }
+  };
+
+  const toggleBannerStatus = async (id) => {
+    try {
+      await axios.patch(`http://${window.location.hostname}:5000/api/banners/admin/${id}/toggle`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      fetchBanners();
+      toast.success("Banner status updated");
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update status");
     }
   };
 
@@ -129,25 +154,52 @@ const Banner_Admin = () => {
             <div>
               <label style={{ fontSize: '12px', color: '#666', marginBottom: '4px', display: 'block' }}>Upload Banner Image</label>
               <input type="file" accept="image/*" onChange={handleImageUpload} style={{ width: '100%', padding: '10px', border: '1px dashed #ccc', borderRadius: '6px' }} />
+              <div style={{
+                marginTop: '8px', padding: '10px 12px', background: '#fff7ed', border: '1px solid #fed7aa',
+                borderRadius: '6px', fontSize: '11.5px', color: '#9a3412', lineHeight: '1.6'
+              }}>
+                <i className="fa-solid fa-circle-info" style={{ marginRight: '6px' }}></i>
+                <strong>Recommended size: 1000×450px</strong> (wide rectangle, ~2.2:1 ratio).
+                Keep text/logo away from edges. Avoid tall or square images — they'll get cropped or padded on the website.
+              </div>
               {formData.url && <img src={formData.url} alt="preview" style={{ width: '100%', height: '120px', objectFit: 'contain', marginTop: '10px', border: '1px solid #eee', borderRadius: '4px', background: '#f8fafc' }} />}
             </div>
             <div>
-              <label style={{ fontSize: '12px', color: '#666', marginBottom: '4px', display: 'block' }}>Link to Category (when clicked)</label>
-              <select
-                value={formData.linkCategoryId}
-                onChange={e => setFormData({...formData, linkCategoryId: e.target.value})}
-                style={{ width: '100%', padding: '10px', border: '1px solid #ddd', borderRadius: '6px' }}
-              >
-                <option value="">No link (decorative only)</option>
+              <label style={{ fontSize: '12px', color: '#666', marginBottom: '8px', display: 'block' }}>
+                Link to Categories (when clicked) — select one or more
+              </label>
+              <div style={{ border: '1px solid #ddd', borderRadius: '6px', maxHeight: '220px', overflowY: 'auto', padding: '10px' }}>
+                {categories.filter(c => !c.parentId).length === 0 && (
+                  <div style={{ fontSize: '13px', color: '#94a3b8' }}>No categories available.</div>
+                )}
                 {categories.filter(c => !c.parentId).map(parent => (
-                  <optgroup key={parent.id} label={`── ${parent.name}`}>
-                    <option value={parent.id}>{parent.name} (All)</option>
+                  <div key={parent.id} style={{ marginBottom: '10px' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: '600', fontSize: '13px', color: '#1e293b', cursor: 'pointer', marginBottom: '4px' }}>
+                      <input
+                        type="checkbox"
+                        checked={formData.linkCategoryIds.includes(parent.id)}
+                        onChange={() => toggleCategorySelection(parent.id)}
+                      />
+                      {parent.name} (All)
+                    </label>
                     {categories.filter(child => child.parentId === parent.id).map(child => (
-                      <option key={child.id} value={child.id}>&nbsp;&nbsp;↳ {child.name}</option>
+                      <label key={child.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#444', cursor: 'pointer', paddingLeft: '22px', marginBottom: '4px' }}>
+                        <input
+                          type="checkbox"
+                          checked={formData.linkCategoryIds.includes(child.id)}
+                          onChange={() => toggleCategorySelection(child.id)}
+                        />
+                        ↳ {child.name}
+                      </label>
                     ))}
-                  </optgroup>
+                  </div>
                 ))}
-              </select>
+              </div>
+              {formData.linkCategoryIds.length > 0 && (
+                <div style={{ fontSize: '12px', color: '#059669', marginTop: '6px' }}>
+                  {formData.linkCategoryIds.length} categor{formData.linkCategoryIds.length === 1 ? 'y' : 'ies'} selected
+                </div>
+              )}
             </div>
             <button type="submit" style={{ padding: '12px', background: '#1e293b', color: 'white', border: 'none', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', marginTop: '10px' }}>
               {isEditing ? 'Save Changes' : 'Add Banner'}
@@ -199,6 +251,20 @@ const Banner_Admin = () => {
                   </td>
                   <td style={{ padding: '15px 20px' }}>
                     <strong style={{ display: 'block', color: '#1e293b', fontSize: '16px' }}>{b.label}</strong>
+                    <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                      {b.linkCategoryIds && b.linkCategoryIds.length > 0
+                        ? `Linked to ${b.linkCategoryIds.length} categor${b.linkCategoryIds.length === 1 ? 'y' : 'ies'}`
+                        : 'Decorative (no link)'}
+                    </span>
+                    <br />
+                    <span style={{
+                      display: 'inline-block', marginTop: '4px', fontSize: '11px', fontWeight: '600',
+                      padding: '2px 8px', borderRadius: '10px',
+                      background: b.isActive !== false ? '#dcfce7' : '#fee2e2',
+                      color: b.isActive !== false ? '#166534' : '#991b1b'
+                    }}>
+                      {b.isActive !== false ? 'Active' : 'Disabled'}
+                    </span>
                   </td>
                   <td style={{ padding: '15px 20px' }}>
                     <div style={{ fontSize: '12px', color: '#64748b' }}>
@@ -210,6 +276,9 @@ const Banner_Admin = () => {
                     <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                       <button onClick={() => openDrawer(b)} style={{ background: '#e0e7ff', color: '#4338ca', border: 'none', padding: '8px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }}>
                         <i className="fa-solid fa-pen"></i> Edit
+                      </button>
+                      <button onClick={() => toggleBannerStatus(b._id)} style={{ background: b.isActive !== false ? '#fef3c7' : '#dcfce7', color: b.isActive !== false ? '#92400e' : '#166534', border: 'none', padding: '8px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }}>
+                        <i className={`fa-solid ${b.isActive !== false ? 'fa-eye-slash' : 'fa-eye'}`}></i> {b.isActive !== false ? 'Disable' : 'Enable'}
                       </button>
                       <button onClick={() => deleteBanner(b._id)} style={{ background: '#fee2e2', color: '#ef4444', border: 'none', padding: '8px 12px', borderRadius: '6px', cursor: 'pointer', fontWeight: '500' }}>
                         <i className="fa-solid fa-trash"></i> Delete

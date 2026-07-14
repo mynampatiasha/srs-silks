@@ -5,6 +5,13 @@ import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import ConfirmModal from '../components/ConfirmModal';
 
+// Detects raw highway codes like "NH44", "SH5", or "NH44;NH65;NH163"
+// which OpenStreetMap sometimes returns instead of a real street name
+const isHighwayCode = (value) => {
+  if (!value) return false;
+  return value.split(';').every(part => /^(NH|SH|MDR)\s?-?\d+$/i.test(part.trim()));
+};
+
 const AddressesPage = () => {
   const navigate = useNavigate();
   const [addresses, setAddresses] = useState([]);
@@ -28,9 +35,10 @@ const AddressesPage = () => {
         const res = await axios.get(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
         if (res.data && res.data.address) {
           const addr = res.data.address;
+          const cleanRoad = isHighwayCode(addr.road) ? null : addr.road;
           setNewAddress(prev => ({
             ...prev,
-            street: addr.road || addr.suburb || addr.neighbourhood || '',
+            street: cleanRoad || addr.suburb || addr.neighbourhood || '',
             city: addr.city || addr.town || addr.village || addr.county || '',
             state: addr.state || '',
             pincode: addr.postcode || ''
@@ -45,7 +53,7 @@ const AddressesPage = () => {
     }, () => {
       toast.error("Unable to retrieve your location. Please allow location access.");
       setIsLocating(false);
-    });
+    }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
   };
 
   // Check auth and fetch addresses

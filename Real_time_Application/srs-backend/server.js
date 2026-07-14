@@ -29,14 +29,17 @@ const { productRouter } = require('./routes/product_admin');
 const { categoryRouter } = require('./routes/category_admin');
 const { bannerRouter } = require('./routes/banner_admin');
 const { userRouter } = require('./routes/user_admin');
+const { contactRouter } = require('./routes/contact');
 
 app.use('/api/admin', authRouter);
+app.use('/api/admin', require('./routes/admin_dashboard'));
 app.use('/api/customer', authCustomerRouter);
 app.use('/api/orders', orderRoutes);
 app.use('/api/products', productRouter);
 app.use('/api/categories', categoryRouter);
 app.use('/api/banners', bannerRouter);
 app.use('/api/users', userRouter);
+app.use('/api/contact', contactRouter);
 
 // ==========================================
 // 3. START SERVER
