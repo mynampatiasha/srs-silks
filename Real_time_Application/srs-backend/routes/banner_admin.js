@@ -1,6 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const { verifyAdmin } = require('./auth_admin');
+const { verifyAdmin, requirePermission } = require('./auth_admin');
 const router = express.Router();
 
 // ==========================================
@@ -32,7 +32,7 @@ router.get('/', async (req, res) => {
 });
 
 // GET all banners (Protected - for Admin) — includes inactive ones
-router.get('/admin/all', verifyAdmin, async (req, res) => {
+router.get('/admin/all', verifyAdmin, requirePermission('banners'), async (req, res) => {
   try {
     const banners = await Banner.find().sort({ createdAt: -1 });
     res.json(banners);
@@ -42,7 +42,7 @@ router.get('/admin/all', verifyAdmin, async (req, res) => {
 });
 
 // CREATE a banner (Protected - for Admin)
-router.post('/admin', verifyAdmin, async (req, res) => {
+router.post('/admin', verifyAdmin, requirePermission('banners'), async (req, res) => {
   try {
     const payload = { ...req.body };
     if (!payload._id) delete payload._id; // Prevent CastError if _id is empty string
@@ -56,7 +56,7 @@ router.post('/admin', verifyAdmin, async (req, res) => {
 });
 
 // UPDATE a banner (Protected - for Admin)
-router.put('/admin/:id', verifyAdmin, async (req, res) => {
+router.put('/admin/:id', verifyAdmin, requirePermission('banners'), async (req, res) => {
   try {
     const payload = { ...req.body };
     delete payload._id; // Ensure we don't try to mutate _id
@@ -70,7 +70,7 @@ router.put('/admin/:id', verifyAdmin, async (req, res) => {
 });
 
 // TOGGLE active/inactive (Protected - for Admin)
-router.patch('/admin/:id/toggle', verifyAdmin, async (req, res) => {
+router.patch('/admin/:id/toggle', verifyAdmin, requirePermission('banners'), async (req, res) => {
   try {
     const banner = await Banner.findById(req.params.id);
     if (!banner) return res.status(404).json({ error: 'Banner not found' });
@@ -83,7 +83,7 @@ router.patch('/admin/:id/toggle', verifyAdmin, async (req, res) => {
 });
 
 // DELETE a banner (Protected - for Admin)
-router.delete('/admin/:id', verifyAdmin, async (req, res) => {
+router.delete('/admin/:id', verifyAdmin, requirePermission('banners'), async (req, res) => {
   try {
     await Banner.findByIdAndDelete(req.params.id);
     res.json({ success: true });

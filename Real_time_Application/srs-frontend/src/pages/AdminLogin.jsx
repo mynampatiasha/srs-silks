@@ -11,9 +11,10 @@ const AdminLogin = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:5000/api/admin/login', { email, password });
+      const res = await axios.post(`http://${window.location.hostname}:5000/api/admin/login`, { email, password });
       if (res.data.success) {
         localStorage.setItem('adminToken', res.data.token);
+        localStorage.setItem('adminUser', JSON.stringify(res.data.user));
         navigate('/admin/dashboard');
       }
     } catch (err) {

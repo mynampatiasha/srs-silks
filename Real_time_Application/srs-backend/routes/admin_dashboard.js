@@ -5,8 +5,9 @@ const Review = require('../models/Review');
 const { UserSchema } = require('./auth_customer');
 const mongoose = require('mongoose');
 const User = mongoose.models.User || mongoose.model('User', UserSchema);
+const { verifyAdmin } = require('./auth_admin');
 
-router.get('/dashboard-summary', async (req, res) => {
+router.get('/dashboard-summary', verifyAdmin, async (req, res) => {
   try {
     const twoDaysAgo = new Date(Date.now() - 48 * 60 * 60 * 1000);
 

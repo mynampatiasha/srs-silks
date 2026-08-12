@@ -1,7 +1,8 @@
+const path = require('path');
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 const app = express();
 app.use(cors());
@@ -12,8 +13,11 @@ const PORT = process.env.PORT || 5000;
 // ==========================================
 // 1. MONGODB CONNECTION
 // ==========================================
-// Using the explicit replica set bypass with the exact replicaSet name discovered via TXT.
-const MONGO_URI = "mongodb://srssilktraders1_db_user:9PAq6cGZRGuaB7LN@ac-imtqlti-shard-00-00.ik0nlml.mongodb.net:27017,ac-imtqlti-shard-00-01.ik0nlml.mongodb.net:27017,ac-imtqlti-shard-00-02.ik0nlml.mongodb.net:27017/srssilks?ssl=true&replicaSet=atlas-rzxbyt-shard-0&authSource=admin&retryWrites=true&w=majority";
+const MONGO_URI = process.env.MONGO_URI;
+
+if (!MONGO_URI) {
+  throw new Error('MONGO_URI is not set. Copy .env.example to .env and fill in your credentials.');
+}
 
 mongoose.connect(MONGO_URI)
   .then(() => console.log('✅ Connected to MongoDB Atlas'))
@@ -30,9 +34,11 @@ const { categoryRouter } = require('./routes/category_admin');
 const { bannerRouter } = require('./routes/banner_admin');
 const { userRouter } = require('./routes/user_admin');
 const { contactRouter } = require('./routes/contact');
+const { adminTeamRouter } = require('./routes/admin_team');
 
 app.use('/api/admin', authRouter);
 app.use('/api/admin', require('./routes/admin_dashboard'));
+app.use('/api/admin-team', adminTeamRouter);
 app.use('/api/customer', authCustomerRouter);
 app.use('/api/orders', orderRoutes);
 app.use('/api/products', productRouter);

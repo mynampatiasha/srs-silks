@@ -8,6 +8,7 @@ import Customer_Admin from '../components/admin/Customer_Admin';
 import Order_Admin from '../components/admin/Order_Admin';
 import Return_Admin from '../components/admin/Return_Admin';
 import Review_Admin from '../components/admin/Review_Admin';
+import AdminAccess_Admin from '../components/admin/AdminAccess_Admin';
 import DashboardAttentionSection from '../components/admin/DashboardAttentionSection';
 
 const AdminDashboard = () => {
@@ -17,6 +18,10 @@ const AdminDashboard = () => {
   const [lowStockProducts, setLowStockProducts] = useState([]);
   const [summary, setSummary] = useState(null);
   const [summaryLoading, setSummaryLoading] = useState(true);
+
+  const adminUser = JSON.parse(localStorage.getItem('adminUser') || 'null');
+  const isOwner = adminUser?.role === 'owner';
+  const can = (key) => isOwner || !!adminUser?.permissions?.[key];
 
   useEffect(() => {
     fetch(`http://${window.location.hostname}:5000/api/admin/dashboard-summary`, {
@@ -49,6 +54,7 @@ const AdminDashboard = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('adminToken');
+    localStorage.removeItem('adminUser');
     navigate('/admin');
   };
 
@@ -61,6 +67,7 @@ const AdminDashboard = () => {
       case 'orders': return <Order_Admin setActiveTab={setActiveTab} />;
       case 'returns': return <Return_Admin />;
       case 'reviews': return <Review_Admin />;
+      case 'access': return <AdminAccess_Admin />;
       default:
         return (
           <div className="tab-content active" id="tab-dashboard">
@@ -125,27 +132,46 @@ const AdminDashboard = () => {
           <a href="#" className={activeTab === 'dashboard' ? 'active' : ''} onClick={(e) => { e.preventDefault(); setActiveTab('dashboard'); setIsSidebarOpen(false); }} style={{ display: 'block', padding: '15px 25px', color: activeTab === 'dashboard' ? 'white' : '#94a3b8', background: activeTab === 'dashboard' ? '#334155' : 'transparent', textDecoration: 'none' }}>
             <i className="fa-solid fa-chart-pie" style={{ width: '25px' }}></i> Dashboard
           </a>
-          <a href="#" className={activeTab === 'orders' ? 'active' : ''} onClick={(e) => { e.preventDefault(); setActiveTab('orders'); setIsSidebarOpen(false); }} style={{ display: 'block', padding: '15px 25px', color: activeTab === 'orders' ? 'white' : '#94a3b8', background: activeTab === 'orders' ? '#334155' : 'transparent', textDecoration: 'none' }}>
-            <i className="fa-solid fa-cart-shopping" style={{ width: '25px' }}></i> Orders
-          </a>
-          <a href="#" className={activeTab === 'returns' ? 'active' : ''} onClick={(e) => { e.preventDefault(); setActiveTab('returns'); setIsSidebarOpen(false); }} style={{ display: 'block', padding: '15px 25px', color: activeTab === 'returns' ? 'white' : '#94a3b8', background: activeTab === 'returns' ? '#334155' : 'transparent', textDecoration: 'none' }}>
-            <i className="fa-solid fa-arrow-rotate-left" style={{ width: '25px' }}></i> Returns
-          </a>
-          <a href="#" className={activeTab === 'reviews' ? 'active' : ''} onClick={(e) => { e.preventDefault(); setActiveTab('reviews'); setIsSidebarOpen(false); }} style={{ display: 'block', padding: '15px 25px', color: activeTab === 'reviews' ? 'white' : '#94a3b8', background: activeTab === 'reviews' ? '#334155' : 'transparent', textDecoration: 'none' }}>
-            <i className="fa-solid fa-star" style={{ width: '25px' }}></i> Reviews
-          </a>
-          <a href="#" className={activeTab === 'products' ? 'active' : ''} onClick={(e) => { e.preventDefault(); setActiveTab('products'); setIsSidebarOpen(false); }} style={{ display: 'block', padding: '15px 25px', color: activeTab === 'products' ? 'white' : '#94a3b8', background: activeTab === 'products' ? '#334155' : 'transparent', textDecoration: 'none' }}>
-            <i className="fa-solid fa-box" style={{ width: '25px' }}></i> Products
-          </a>
-          <a href="#" className={activeTab === 'categories' ? 'active' : ''} onClick={(e) => { e.preventDefault(); setActiveTab('categories'); setIsSidebarOpen(false); }} style={{ display: 'block', padding: '15px 25px', color: activeTab === 'categories' ? 'white' : '#94a3b8', background: activeTab === 'categories' ? '#334155' : 'transparent', textDecoration: 'none' }}>
-            <i className="fa-solid fa-tags" style={{ width: '25px' }}></i> Categories
-          </a>
-          <a href="#" className={activeTab === 'banners' ? 'active' : ''} onClick={(e) => { e.preventDefault(); setActiveTab('banners'); setIsSidebarOpen(false); }} style={{ display: 'block', padding: '15px 25px', color: activeTab === 'banners' ? 'white' : '#94a3b8', background: activeTab === 'banners' ? '#334155' : 'transparent', textDecoration: 'none' }}>
-            <i className="fa-solid fa-image" style={{ width: '25px' }}></i> Banners
-          </a>
-          <a href="#" className={activeTab === 'customers' ? 'active' : ''} onClick={(e) => { e.preventDefault(); setActiveTab('customers'); setIsSidebarOpen(false); }} style={{ display: 'block', padding: '15px 25px', color: activeTab === 'customers' ? 'white' : '#94a3b8', background: activeTab === 'customers' ? '#334155' : 'transparent', textDecoration: 'none' }}>
-            <i className="fa-solid fa-users" style={{ width: '25px' }}></i> Customers
-          </a>
+          {can('orders') && (
+            <a href="#" className={activeTab === 'orders' ? 'active' : ''} onClick={(e) => { e.preventDefault(); setActiveTab('orders'); setIsSidebarOpen(false); }} style={{ display: 'block', padding: '15px 25px', color: activeTab === 'orders' ? 'white' : '#94a3b8', background: activeTab === 'orders' ? '#334155' : 'transparent', textDecoration: 'none' }}>
+              <i className="fa-solid fa-cart-shopping" style={{ width: '25px' }}></i> Orders
+            </a>
+          )}
+          {can('returns') && (
+            <a href="#" className={activeTab === 'returns' ? 'active' : ''} onClick={(e) => { e.preventDefault(); setActiveTab('returns'); setIsSidebarOpen(false); }} style={{ display: 'block', padding: '15px 25px', color: activeTab === 'returns' ? 'white' : '#94a3b8', background: activeTab === 'returns' ? '#334155' : 'transparent', textDecoration: 'none' }}>
+              <i className="fa-solid fa-arrow-rotate-left" style={{ width: '25px' }}></i> Returns
+            </a>
+          )}
+          {can('reviews') && (
+            <a href="#" className={activeTab === 'reviews' ? 'active' : ''} onClick={(e) => { e.preventDefault(); setActiveTab('reviews'); setIsSidebarOpen(false); }} style={{ display: 'block', padding: '15px 25px', color: activeTab === 'reviews' ? 'white' : '#94a3b8', background: activeTab === 'reviews' ? '#334155' : 'transparent', textDecoration: 'none' }}>
+              <i className="fa-solid fa-star" style={{ width: '25px' }}></i> Reviews
+            </a>
+          )}
+          {can('products') && (
+            <a href="#" className={activeTab === 'products' ? 'active' : ''} onClick={(e) => { e.preventDefault(); setActiveTab('products'); setIsSidebarOpen(false); }} style={{ display: 'block', padding: '15px 25px', color: activeTab === 'products' ? 'white' : '#94a3b8', background: activeTab === 'products' ? '#334155' : 'transparent', textDecoration: 'none' }}>
+              <i className="fa-solid fa-box" style={{ width: '25px' }}></i> Products
+            </a>
+          )}
+          {can('categories') && (
+            <a href="#" className={activeTab === 'categories' ? 'active' : ''} onClick={(e) => { e.preventDefault(); setActiveTab('categories'); setIsSidebarOpen(false); }} style={{ display: 'block', padding: '15px 25px', color: activeTab === 'categories' ? 'white' : '#94a3b8', background: activeTab === 'categories' ? '#334155' : 'transparent', textDecoration: 'none' }}>
+              <i className="fa-solid fa-tags" style={{ width: '25px' }}></i> Categories
+            </a>
+          )}
+          {can('banners') && (
+            <a href="#" className={activeTab === 'banners' ? 'active' : ''} onClick={(e) => { e.preventDefault(); setActiveTab('banners'); setIsSidebarOpen(false); }} style={{ display: 'block', padding: '15px 25px', color: activeTab === 'banners' ? 'white' : '#94a3b8', background: activeTab === 'banners' ? '#334155' : 'transparent', textDecoration: 'none' }}>
+              <i className="fa-solid fa-image" style={{ width: '25px' }}></i> Banners
+            </a>
+          )}
+          {can('customers') && (
+            <a href="#" className={activeTab === 'customers' ? 'active' : ''} onClick={(e) => { e.preventDefault(); setActiveTab('customers'); setIsSidebarOpen(false); }} style={{ display: 'block', padding: '15px 25px', color: activeTab === 'customers' ? 'white' : '#94a3b8', background: activeTab === 'customers' ? '#334155' : 'transparent', textDecoration: 'none' }}>
+              <i className="fa-solid fa-users" style={{ width: '25px' }}></i> Customers
+            </a>
+          )}
+          {isOwner && (
+            <a href="#" className={activeTab === 'access' ? 'active' : ''} onClick={(e) => { e.preventDefault(); setActiveTab('access'); setIsSidebarOpen(false); }} style={{ display: 'block', padding: '15px 25px', color: activeTab === 'access' ? 'white' : '#94a3b8', background: activeTab === 'access' ? '#334155' : 'transparent', textDecoration: 'none' }}>
+              <i className="fa-solid fa-user-shield" style={{ width: '25px' }}></i> Team Access
+            </a>
+          )}
         </nav>
         <div className="sidebar-footer" style={{ padding: '20px', borderTop: '1px solid #334155' }}>
           <button onClick={handleLogout} style={{ width: '100%', padding: '10px', background: 'transparent', border: 'none', color: '#ef4444', cursor: 'pointer', textAlign: 'left', fontWeight: 'bold' }}>

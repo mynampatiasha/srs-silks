@@ -1,5 +1,5 @@
 const express = require('express');
-const { verifyAdmin } = require('./auth_admin');
+const { verifyAdmin, requirePermission } = require('./auth_admin');
 const { User } = require('./auth_customer');
 const router = express.Router();
 
@@ -8,7 +8,7 @@ const router = express.Router();
 // ==========================================
 
 // GET all customers with filters (Admin only)
-router.get('/', verifyAdmin, async (req, res) => {
+router.get('/', verifyAdmin, requirePermission('customers'), async (req, res) => {
   try {
     const { search, sortBy } = req.query;
     
@@ -35,7 +35,7 @@ router.get('/', verifyAdmin, async (req, res) => {
 });
 
 // GET customer analytics (Admin only)
-router.get('/analytics', verifyAdmin, async (req, res) => {
+router.get('/analytics', verifyAdmin, requirePermission('customers'), async (req, res) => {
   try {
     const now = new Date();
     const startOfThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -75,7 +75,7 @@ router.get('/analytics', verifyAdmin, async (req, res) => {
 });
 
 // DELETE customer (Admin only)
-router.delete('/:id', verifyAdmin, async (req, res) => {
+router.delete('/:id', verifyAdmin, requirePermission('customers'), async (req, res) => {
   try {
     await User.findByIdAndDelete(req.params.id);
     res.json({ success: true, message: 'User deleted' });

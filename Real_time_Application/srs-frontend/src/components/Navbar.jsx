@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import SearchModal from './SearchModal';
 
 const Navbar = ({ cartCount, onCartClick }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const customer = localStorage.getItem('srs_customer') ? JSON.parse(localStorage.getItem('srs_customer')) : null;
 
   const handleLogout = () => {
@@ -19,13 +21,16 @@ const Navbar = ({ cartCount, onCartClick }) => {
         <span>Chickpet, Bengaluru • Premium Silks</span>
       </div>
       <div className={`nav-links ${menuOpen ? 'open' : ''}`} id="nav-links">
-        <a href="/#collection" onClick={() => setMenuOpen(false)}>Collection</a>
+        <a href="/#collection" className="nav-contact-link" onClick={() => setMenuOpen(false)}>Collection</a>
         <a href="/#gallery" onClick={() => setMenuOpen(false)}>Gallery</a>
         <a href="/#reviews" onClick={() => setMenuOpen(false)}>Reviews</a>
         <Link to="/about" onClick={() => setMenuOpen(false)}>About</Link>
-        <Link to="/contact" className="nav-contact-link" onClick={() => setMenuOpen(false)}>Contact Us</Link>
+        <Link to="/contact" onClick={() => setMenuOpen(false)}>Contact Us</Link>
       </div>
       <div className="nav-actions">
+        <button className="nav-btn" title="Search" aria-label="Search" style={{ color: 'var(--ink)' }} onClick={() => setSearchOpen(true)}>
+          <i className="fa-solid fa-magnifying-glass"></i>
+        </button>
         <Link to="/wishlist" className="nav-btn" title="Wishlist" aria-label="Open wishlist" style={{ color: 'var(--ink)' }}>
           <i className="fa-regular fa-heart"></i>
         </Link>
@@ -81,6 +86,7 @@ const Navbar = ({ cartCount, onCartClick }) => {
           <i className="fa-solid fa-bars"></i>
         </button>
       </div>
+      {searchOpen && <SearchModal onClose={() => setSearchOpen(false)} />}
     </nav>
   );
 };

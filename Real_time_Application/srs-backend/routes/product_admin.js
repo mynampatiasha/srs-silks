@@ -1,6 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const { verifyAdmin } = require('./auth_admin');
+const { verifyAdmin, requirePermission } = require('./auth_admin');
 const router = express.Router();
 
 // ==========================================
@@ -37,7 +37,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // CREATE a product (Protected - for Admin)
-router.post('/admin', verifyAdmin, async (req, res) => {
+router.post('/admin', verifyAdmin, requirePermission('products'), async (req, res) => {
   try {
     const product = new Product({ ...req.body, createdBy: req.user.email, updatedBy: req.user.email, updatedAt: Date.now() });
     await product.save();
@@ -48,7 +48,7 @@ router.post('/admin', verifyAdmin, async (req, res) => {
 });
 
 // UPDATE a product (Protected - for Admin)
-router.put('/admin/:id', verifyAdmin, async (req, res) => {
+router.put('/admin/:id', verifyAdmin, requirePermission('products'), async (req, res) => {
   try {
     const data = { ...req.body, updatedBy: req.user.email, updatedAt: Date.now() };
     const product = await Product.findByIdAndUpdate(req.params.id, data, { new: true });
@@ -59,7 +59,7 @@ router.put('/admin/:id', verifyAdmin, async (req, res) => {
 });
 
 // DELETE a product (Protected - for Admin)
-router.delete('/admin/:id', verifyAdmin, async (req, res) => {
+router.delete('/admin/:id', verifyAdmin, requirePermission('products'), async (req, res) => {
   try {
     await Product.findByIdAndDelete(req.params.id);
     res.json({ success: true });
@@ -69,7 +69,7 @@ router.delete('/admin/:id', verifyAdmin, async (req, res) => {
 });
 
 // TOGGLE STOCK (Protected - for Admin)
-router.put('/admin/:id/toggleStock', verifyAdmin, async (req, res) => {
+router.put('/admin/:id/toggleStock', verifyAdmin, requirePermission('products'), async (req, res) => {
   try {
     const { inStock } = req.body;
     const product = await Product.findByIdAndUpdate(req.params.id, { inStock, updatedBy: req.user.email, updatedAt: Date.now() }, { new: true });
@@ -133,7 +133,7 @@ router.get('/:id/reviews', async (req, res) => {
 });
 
 // GET all reviews (Protected - for Admin)
-router.get('/admin/all-reviews', verifyAdmin, async (req, res) => {
+router.get('/admin/all-reviews', verifyAdmin, requirePermission('reviews'), async (req, res) => {
   try {
     const reviews = await Review.find()
       .populate('user', 'name email')
@@ -146,7 +146,7 @@ router.get('/admin/all-reviews', verifyAdmin, async (req, res) => {
 });
 
 // UPDATE review status (Protected - for Admin)
-router.put('/admin/reviews/:reviewId', verifyAdmin, async (req, res) => {
+router.put('/admin/reviews/:reviewId', verifyAdmin, requirePermission('reviews'), async (req, res) => {
   try {
     const { status } = req.body;
     if (!['Pending', 'Approved', 'Rejected'].includes(status)) {

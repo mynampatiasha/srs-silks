@@ -3,6 +3,7 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
+const { verifyAdmin, requirePermission } = require('./auth_admin');
 
 const SECRET = process.env.JWT_SECRET || 'srs_silks_super_secret_key_2026';
 
@@ -86,12 +87,9 @@ router.put('/:id/return', authenticateToken, async (req, res) => {
 // ADMIN ROUTES
 // ==========================================
 
-// Middleware for Admin (Mocked for now since admin uses different auth, but we assume admin token here or no token check for prototype ease. Let's just create the routes.)
-// In a real app, verify admin token.
-
 // @route   GET /api/orders/admin/all
 // @desc    Get all orders for admin
-router.get('/admin/all', async (req, res) => {
+router.get('/admin/all', verifyAdmin, requirePermission('orders'), async (req, res) => {
   try {
     const orders = await Order.find()
                               .populate('customer', 'name email phone')
@@ -106,7 +104,7 @@ router.get('/admin/all', async (req, res) => {
 
 // @route   PUT /api/orders/admin/:id/status
 // @desc    Update order status and add to history
-router.put('/admin/:id/status', async (req, res) => {
+router.put('/admin/:id/status', verifyAdmin, requirePermission('orders'), async (req, res) => {
   try {
     const { status } = req.body;
     
@@ -129,7 +127,7 @@ router.put('/admin/:id/status', async (req, res) => {
 
 // @route   PUT /api/orders/admin/:id/return-action
 // @desc    Admin accepts or rejects a return
-router.put('/admin/:id/return-action', async (req, res) => {
+router.put('/admin/:id/return-action', verifyAdmin, requirePermission('returns'), async (req, res) => {
   try {
     const { action, adminRejectReason } = req.body; // action = 'Accept' or 'Reject'
     
@@ -155,7 +153,7 @@ router.put('/admin/:id/return-action', async (req, res) => {
 
 // @route   DELETE /api/orders/admin/:id
 // @desc    Delete an order completely
-router.delete('/admin/:id', async (req, res) => {
+router.delete('/admin/:id', verifyAdmin, requirePermission('orders'), async (req, res) => {
   try {
     const order = await Order.findByIdAndDelete(req.params.id);
     if (!order) {

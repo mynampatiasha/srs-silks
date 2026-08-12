@@ -1,6 +1,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const { verifyAdmin } = require('./auth_admin');
+const { verifyAdmin, requirePermission } = require('./auth_admin');
 const router = express.Router();
 
 // ==========================================
@@ -32,7 +32,7 @@ router.get('/', async (req, res) => {
 });
 
 // CREATE or UPDATE a category (Protected - for Admin)
-router.post('/admin', verifyAdmin, async (req, res) => {
+router.post('/admin', verifyAdmin, requirePermission('categories'), async (req, res) => {
   try {
     const { id, _id, ...rest } = req.body; // strip _id to avoid immutable field error
     const data = {
@@ -50,7 +50,7 @@ router.post('/admin', verifyAdmin, async (req, res) => {
 });
 
 // UPDATE an existing category (Protected - for Admin)
-router.put('/admin/:id', verifyAdmin, async (req, res) => {
+router.put('/admin/:id', verifyAdmin, requirePermission('categories'), async (req, res) => {
   try {
     const { _id, ...rest } = req.body; // strip _id
     const data = { ...rest, parentId: rest.parentId || null, updatedBy: req.user.email, updatedAt: Date.now() };
@@ -63,7 +63,7 @@ router.put('/admin/:id', verifyAdmin, async (req, res) => {
 });
 
 // DELETE a category (Protected - for Admin)
-router.delete('/admin/:id', verifyAdmin, async (req, res) => {
+router.delete('/admin/:id', verifyAdmin, requirePermission('categories'), async (req, res) => {
   try {
     await Category.findOneAndDelete({ id: req.params.id });
     res.json({ success: true });
