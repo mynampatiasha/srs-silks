@@ -24,17 +24,6 @@ This repo contains a few stages of the same project side by side:
   Cloudinary (via `multer-storage-cloudinary`) for product images
 - **Data models**: Product, Order, Review, AdminUser
 
-## ⚠️ Stray file
-
-`billing_main_shell.dart` at the repo root is **not part of this project** —
-its imports (`finance_secure_storage`, `finance_auth_service`,
-`erp_users_management_screen`, invoices, vendor credits, chart of accounts,
-etc.) match the [abra-finance-app](https://github.com/mynampatiasha/abra-finance-app)
-codebase, and its relative import paths (`../../core/...`,
-`../../app/config/...`) point to a folder structure that doesn't exist in
-this repo. It looks like it was committed here by accident and isn't
-wired into or runnable as part of SRS Silks — safe to delete if you confirm
-it's not needed.
 
 ## 🚀 Running Locally
 
