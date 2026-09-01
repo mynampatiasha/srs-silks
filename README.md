@@ -1,4 +1,10 @@
-# SRS Silks — Ecommerce Platform
+# 🥻 SRS Silks — Ecommerce Platform
+
+`React (Vite)` `Node.js` `Express` `MongoDB` `Cloudinary` `Flutter`
+
+> A full-stack ecommerce platform for a saree and ethnic-wear store.
+
+## What is this?
 
 A full-stack ecommerce site for SRS Silks (a saree and ethnic-wear store) —
 product catalog, orders, reviews, and admin management, plus a separate
@@ -6,16 +12,14 @@ Flutter billing/POS shell.
 
 This repo contains a few stages of the same project side by side:
 
-- **`Real_time_Application/`** — the current full-stack app: React (Vite)
-  frontend + Express/MongoDB backend with Cloudinary image storage. This is
-  the one to run for active development.
-- **`demo/`** — an earlier static HTML/CSS/JS prototype (storefront +
-  admin panel) used before the real-time app was built.
-- **`srs-backend/`** — an earlier/parallel copy of the backend (kept
-  alongside `Real_time_Application/srs-backend/`, which is more current).
-- **`billing_main_shell.dart`** — a Flutter shell for a POS/billing app.
+| Folder | What it is |
+|---|---|
+| `Real_time_Application/` | ✅ Current full-stack app — the one to run for active development |
+| `demo/` | Earlier static HTML/CSS/JS prototype (storefront + admin panel) |
+| `srs-backend/` | Earlier/parallel backend copy |
+| `billing_main_shell.dart` | Flutter shell for a POS/billing app |
 
-## Tech stack
+## 🛠️ Tech Stack
 
 - **Frontend**: React (Vite)
 - **Backend**: Node.js, Express 5, MongoDB (Mongoose), JWT auth, bcrypt,
@@ -23,17 +27,21 @@ This repo contains a few stages of the same project side by side:
 - **Data models**: Product, Order, Review, AdminUser
 - **Billing app**: Flutter (`billing_main_shell.dart`)
 
-## Running locally
+## 🚀 Running Locally
 
 ```bash
 cd Real_time_Application/srs-backend
 npm install
 npm start
 ```
-Requires a `.env` with `MONGO_URI`, a JWT secret, and Cloudinary credentials.
 
 ```bash
 cd Real_time_Application/srs-frontend
 npm install
 npm run dev
 ```
+
+## 🔒 Security
+
+Requires a `.env` with `MONGO_URI`, a JWT secret, and Cloudinary credentials
+— never commit real values for these.
